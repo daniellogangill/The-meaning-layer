@@ -17,7 +17,7 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Generate synthetic evidence
         run: python -m src.semantic_experiment --out data/experiment --seed 42
-      - name: Discover and score concepts
+      - name: Generate narrative evidence\n        run: python -m src.narrative_corpus --out data/narrative\n      - name: Discover and score concepts
         run: python -m src.discover --root data/experiment --output data/results.json
       - name: Build executive dashboard
         run: python -m src.build_dashboard --results data/results.json --output data/dashboard.html
@@ -27,5 +27,5 @@ jobs:
           path: |
             data/results.json
             data/dashboard.html
-            data/experiment/manifest.json
+            data/experiment/manifest.json\n            data/narrative/narrative_evidence.jsonl
           retention-days: 7
