@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>The Meaning Layer | Redgum Resources</title>
+<style>
+:root{font-family:Inter,system-ui,Arial,sans-serif;color:#f5f4f6;background:#101116}*{box-sizing:border-box}body{margin:0}main{max-width:1180px;margin:auto;padding:28px 22px 70px}
+header{display:flex;justify-content:space-between;gap:15px;align-items:center;flex-wrap:wrap;border-bottom:1px solid #34313a;padding-bottom:20px}
+.brand{font-size:14px;letter-spacing:.12em;color:#ff7eb6;font-weight:800}.pill{border:1px solid #504451;border-radius:20px;padding:7px 12px;color:#d3cbd4;font-size:12px}
+h1{font-size:clamp(36px,5vw,64px);margin:32px 0 12px;letter-spacing:-.05em}h2{margin-top:0;font-size:22px}p{color:#bfbcc7;line-height:1.65}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}.card,.panel{border:1px solid #34313a;border-radius:15px;background:#1b1c24;padding:20px}
+.metric{font-size:32px;font-weight:800}.label{font-size:13px;color:#bcb6c2}.section{margin-top:30px}
+button,select{background:#2c2a36;color:#fff;border:1px solid #5a5060;border-radius:9px;padding:11px 14px;font:inherit;cursor:pointer}
+button.active,button.primary{background:#ef65a1;color:#1b1018;border-color:#ef65a1;font-weight:750}
+button:focus-visible,select:focus-visible{outline:3px solid #fff}button:hover{filter:brightness(1.13)}
+.controls{display:flex;gap:9px;flex-wrap:wrap;margin:18px 0}.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:740px){.cols{grid-template-columns:1fr}}
+.quote{padding:15px;border-left:3px solid #ed70a7;background:#29232e;margin:12px 0;color:#f1e7ed}
+small,.muted{color:#a9a3b0}ul{padding-left:20px;line-height:1.8}.evidence{margin:9px 0;padding:12px;border:1px solid #403946;border-radius:10px}
+.tag{display:inline-block;font-size:11px;color:#ffb9d7;border:1px solid #6d4055;border-radius:10px;padding:3px 8px;margin-right:8px}
+#flow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}.step{padding:10px;border-radius:9px;background:#2b2933;font-size:13px}.arrow{color:#ff87b9}
+</style></head><body><main>
+<header><div class="brand">DESIGN MY THINKING / PROTOTYPE 04</div><div class="pill">REDGUM RESOURCES · 100% SYNTHETIC DEMONSTRATION</div></header>
+<h1>The Meaning Layer</h1><p style="max-width:780px">What does it really take to make enterprise AI work? Explore how identical words, conflicting systems and access boundaries affect an executive decision.</p>
+<div class="grid">
+<div class="card"><div class="metric">5,000</div><div class="label">Fictional employees</div></div>
+<div class="card"><div class="metric">12</div><div class="label">Business functions (target model)</div></div>
+<div class="card"><div class="metric">50</div><div class="label">Concepts in code seed</div></div>
+<div class="card"><div class="metric">600</div><div class="label">Templated evidence records in seed</div></div>
+</div>
+<section class="section panel"><h2>1. Ask the executive question</h2><p>Why has production at Pilbara North fallen below plan?</p>
+<div class="controls"><button id="naive" class="active" type="button">Without meaning layer</button><button id="governed" type="button">With meaning layer</button></div>
+<div id="answer" aria-live="polite"></div></section>
+<section class="section"><h2>2. Inspect enterprise language</h2><p>Choose a term to see why one global definition is not enough.</p>
+<label for="term">Enterprise term</label> <select id="term"><option value="production">Production</option><option value="availability">Availability</option><option value="cost">Cost</option><option value="customer">Customer</option></select>
+<div id="definitions" class="cols" style="margin-top:15px"></div></section>
+<section class="section panel"><h2>3. Trace the evidence</h2><p>All entries below are fictional illustrative source records. The interactive scenario is curated and is not a live result from the discovery pipeline.</p><div id="evidence"></div>
+<div class="controls"><button id="access" type="button">Show access-control example</button></div><div id="accessResult" aria-live="polite"></div></section>
+<section class="section panel"><h2>4. How the governed pipeline works</h2>
+<div id="flow"><span class="step">Source inventory</span><span class="arrow">→</span><span class="step">Access approval</span><span class="arrow">→</span><span class="step">Extract assertions</span><span class="arrow">→</span><span class="step">Resolve meaning</span><span class="arrow">→</span><span class="step">Steward review</span><span class="arrow">→</span><span class="step">Traceable answers</span></div>
+<p><small>Only the deterministic lexical experiment and optional LLM proposal code exist in the backend. Full approval, steward-review and published semantic-graph services are planned, not yet operational.</small></p></section>
+<section class="section"><h2>5. What this prototype demonstrates</h2><p>Enterprise AI is not simply a matter of connecting a model to documents. Reliable answers require context-specific definitions, source provenance, permission boundaries and accountable human governance.</p><p><a style="color:#ff8fbe" href="https://github.com/daniellogangill/The-meaning-layer">Inspect the open-source experiment →</a></p></section>
+</main><script>
+const terms={
+production:[["Mine Control","Tonnes extracted before processing. This is a physical mining activity measure."],["Sales & Logistics","Saleable tonnes dispatched. This is a commercial delivery measure."]],
+availability:[["Maintenance","Mechanical availability: equipment is technically capable of operating."],["Operations","Operational readiness: equipment, crews and other operating constraints are considered."]],
+cost:[["Finance","Recognised accounting expense in the reporting period."],["Procurement","Committed expenditure, including purchase orders not yet invoiced."]],
+customer:[["Sales","The contracted buying legal entity."],["Logistics","The receiving delivery account or ship-to location."]]
+};
+const records=[
+["OPS-104","Operations report","48,100 tonnes mined at Pilbara North","Internal"],
+["LOG-208","Dispatch report","42,800 saleable tonnes dispatched","Internal"],
+["MNT-017","Maintenance work order","Crusher C-17 tripped twice; 7.5 hours of scheduled time lost","Internal"],
+["OPS-122","Shift handover","Operations reported 88% fleet readiness, including standby coverage","Internal"],
+["MNT-119","Maintenance report","Mechanical availability was 81% against a 90% target","Internal"],
+["FIN-091","Finance email","Forecast includes purchase commitments not yet recognised as expense","Restricted"]
+];
+let mode="naive";
+function renderAnswer(){
+document.querySelector("#naive").classList.toggle("active",mode==="naive");
+document.querySelector("#governed").classList.toggle("active",mode==="governed");
+document.querySelector("#answer").innerHTML=mode==="naive"
+? '<div class="quote">Production is inconsistent: one system reports 48,100 tonnes and another 42,800 tonnes. Fleet availability is also contradictory (81% versus 88%).</div><p><strong>Problem:</strong> This naive illustrative answer confuses distinct metrics and treats legitimate contextual differences as errors.</p>'
+: '<div class="quote">The two production figures describe different stages: 48,100 tonnes mined versus 42,800 saleable tonnes dispatched. Maintenance reports 81% mechanical availability; Operations reports 88% operational readiness. Crusher interruptions are a potential contributor, but the evidence does not establish a complete causal explanation.</div><p><strong>Interpretation:</strong> Keep the definitions separate, cite the relevant source records and request validation from the accountable operations and maintenance stewards before recommending action.</p>';
+}
+function renderDefinitions(){const selected=document.querySelector("#term").value;document.querySelector("#definitions").innerHTML=terms[selected].map(x=>'<div class="card"><div class="tag">'+x[0]+'</div><p>'+x[1]+'</p></div>').join("")}
+function renderEvidence(){document.querySelector("#evidence").innerHTML=records.filter(x=>x[3]==="Internal").map(x=>'<div class="evidence"><span class="tag">'+x[0]+'</span><strong>'+x[1]+'</strong><p>'+x[2]+'</p></div>').join("")}
+document.querySelector("#naive").onclick=()=>{mode="naive";renderAnswer()};
+document.querySelector("#governed").onclick=()=>{mode="governed";renderAnswer()};
+document.querySelector("#term").onchange=renderDefinitions;
+document.querySelector("#access").onclick=()=>document.querySelector("#accessResult").textContent="FIN-091 is restricted. The standard executive view does not disclose its contents; an authorised review and purpose check would be required.";
+renderAnswer();renderDefinitions();renderEvidence();
+</script></body></html>
