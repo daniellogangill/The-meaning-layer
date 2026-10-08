@@ -1,0 +1,31 @@
+name: Semantic experiment
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
+      - name: Generate synthetic evidence
+        run: python -m src.semantic_experiment --out data/experiment --seed 42
+      - name: Discover and score concepts
+        run: python -m src.discover --root data/experiment --output data/results.json
+      - name: Build executive dashboard
+        run: python -m src.build_dashboard --results data/results.json --output data/dashboard.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: semantic-experiment-results
+          path: |
+            data/results.json
+            data/dashboard.html
+            data/experiment/manifest.json
+          retention-days: 7
