@@ -7,6 +7,9 @@ on:
       - 'src/claim_assessment.py'
       - 'tests/test_meaning_lab.py'
       - 'tests/test_claim_assessment.py'
+      - 'tests/test_lab_frontend.cjs'
+      - 'lab/app.js'
+      - 'index.html'
       - '.github/workflows/lab-data.yml'
   workflow_dispatch:
 permissions:
