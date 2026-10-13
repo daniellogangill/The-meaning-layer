@@ -22,7 +22,7 @@ def _amount(record,concept):
 
 def analyse_snapshot(data):
     # Variants across sources repeat an event: deduplicate by evidence thread.
-    canonical={r["thread"]:r for r in data["records"] if r["id"]==r["thread"]}
+    canonical={r["thread"]:r for r in sorted(data["records"],key=lambda item:item["id"]) if r["id"]==r["thread"]}
     groups=defaultdict(list)
     for r in canonical.values():
         candidates={x["id"] for x in r["extraction"]["concepts"]}
