@@ -35,6 +35,14 @@ jobs:
           assert all(r['classification']=='internal' for r in data['records'])
           assert data['evaluation']['gold_labeled'] > 0
           PY
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify browser interaction with regenerated snapshot
+        run: |
+          node --check lab/app.js
+          npm install --no-save --no-audit --no-fund jsdom@26
+          node --test tests/test_lab_frontend.cjs
       - name: Commit reproducible snapshot for GitHub Pages
         run: |
           git config user.name "github-actions[bot]"
