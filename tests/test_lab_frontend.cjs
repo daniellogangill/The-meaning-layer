@@ -99,7 +99,8 @@ test('steward decisions stay local and narrative citations respond to scenarios'
   assert.match(d.querySelector('#content').textContent,/Interpreted position/);
   const input=d.querySelector('#customQuery');input.value='permit';
   click(d,'[data-action="custom-search"]');
-  assert.match(d.querySelector('#customResults').textContent,/matching documents/);
+  assert.match(d.querySelector('#customResults').textContent,/distinct evidence threads retrieved/);
+  assert.match(d.querySelector('#customResults').textContent,/Automatically flagged disagreement/);
   assert.deepEqual(errors, []);
   window.close();
 });
