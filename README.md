@@ -1,5 +1,11 @@
 # The Meaning Layer
 
+## Try the interactive lab (v2)
+
+**[Launch the Redgum Resources Meaning Layer Lab](https://daniellogangill.github.io/The-meaning-layer/)**
+
+Seven interactive views cover executive questions, source evidence, concept definitions, a graph, computed contradictions, local steward review and reproducible test metrics. All content is synthetic. The deterministic extraction and retrieval operate against the generated corpus; the executive narrative is curated and a live LLM is not yet connected. [Read the release notes and next milestones](docs/release-v2.md).
+
 **What it really takes to make enterprise AI work.**
 
 An executive-oriented, technically grounded demonstration of turning fragmented enterprise information into governed, traceable meaning.
