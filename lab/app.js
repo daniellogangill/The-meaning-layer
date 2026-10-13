@@ -251,9 +251,23 @@
   }
   function renderConflicts() {
     const cases=data.comparisons.filter(c=>state.conflictFilter==='all'||c.kind===state.conflictFilter);
+    const computed=data.analysis||{issues:[],distinctions:[],metrics:{}};
+    const liveChecks='<div class="columns equal" style="margin:18px 0">'+
+      '<div class="panel"><div class="row"><h3 style="margin:0">Detected assertion disagreements</h3><span class="spacer"></span>'+badge(computed.issues.length+' flagged','red')+'</div>'+
+      '<p class="micro">Computed by parsing observed text and grouping a detected concept by site and reporting period. Every finding requires steward review.</p>'+
+      computed.issues.map(i=>'<div class="comparison-card">'+badge(i.concept,'red')+' '+
+        badge(i.period,'gray')+'<h4>'+esc(i.values.map(v=>v.value+' '+v.unit).join(' vs '))+'</h4>'+
+        '<p>'+esc(i.assessment)+'</p><div class="trace">'+i.source_ids.map(id=>docLink(id)).join('')+'</div></div>').join('')+
+      '</div><div class="panel"><div class="row"><h3 style="margin:0">Different measurement scopes</h3><span class="spacer"></span>'+badge(computed.distinctions.length+' distinctions','green')+'</div>'+
+      '<p class="micro">Computed cross-concept checks identify where comparing two measures directly would be misleading.</p>'+
+      computed.distinctions.map(i=>'<div class="comparison-card">'+
+        '<h4>'+esc(i.concepts.map(id=>termById(id)?.name||id).join(' ≠ '))+'</h4>'+
+        '<div class="trace">'+i.sources.map(id=>docLink(id)).join('')+'</div></div>').join('')+
+      '</div></div>';
     return '<div class="section-head"><div><span class="eyebrow">CONFLICT ANALYSIS</span><h1>Conflicting figures ≠ conflicting facts.</h1>'+
       '<p>Distinguish legitimate scope differences from assertions that cannot both be true in the same context. Open each source and decide where human validation is essential.</p></div>'+
       badge(data.comparisons.filter(c=>c.kind==='true-conflict').length+' unresolved disputes','red')+'</div>'+
+      liveChecks+
       '<div class="tabs">'+[['all','All comparisons'],['different-definition','Different definitions'],['true-conflict','True conflicts']].map(c=>
       '<button class="'+(state.conflictFilter===c[0]?'active':'')+'" data-action="conflict-filter" data-value="'+c[0]+'">'+c[1]+'</button>').join('')+'</div>'+
       '<div class="columns equal"><div class="panel"><h3>Side-by-side comparisons</h3>'+cases.map(c=>
