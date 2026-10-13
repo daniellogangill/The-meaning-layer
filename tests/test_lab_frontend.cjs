@@ -26,7 +26,7 @@ async function launch() {
 const click = (d,sel) => {
   const target=d.querySelector(sel);
   assert.ok(target,'Expected element '+sel);
-  target.click();
+  target.dispatchEvent(new d.defaultView.MouseEvent('click',{bubbles:true}));
 };
 
 test('loads reproducible snapshot and moves through all seven workbenches', async () => {
