@@ -5824,5 +5824,125 @@
     "sites": 4,
     "concepts": 18,
     "candidate_links": 108
+  },
+  "analysis": {
+    "issues": [
+      {
+        "id": "F-001",
+        "kind": "same-boundary-disagreement",
+        "concept": "forecast-commitment",
+        "site": "Pilbara North",
+        "period": "2026-06",
+        "source_ids": [
+          "PN-14",
+          "PN-15"
+        ],
+        "values": [
+          {
+            "value": 13.7,
+            "unit": "AUD millions",
+            "record": "PN-14"
+          },
+          {
+            "value": 14.2,
+            "unit": "AUD millions",
+            "record": "PN-15"
+          }
+        ],
+        "assessment": "Different assertions for one detected concept, site and period. Version, effective time and governing authority must be checked.",
+        "review_required": true,
+        "method": "scope-aware rule on extracted lexical concept candidates"
+      },
+      {
+        "id": "F-002",
+        "kind": "same-boundary-disagreement",
+        "concept": "isolation-permit",
+        "site": "Pilbara North",
+        "period": "2026-06-06",
+        "source_ids": [
+          "PN-18",
+          "PN-19"
+        ],
+        "values": [
+          {
+            "value": "closed",
+            "unit": "permit status",
+            "record": "PN-18"
+          },
+          {
+            "value": "open",
+            "unit": "permit status",
+            "record": "PN-19"
+          }
+        ],
+        "assessment": "Different assertions for one detected concept, site and period. Version, effective time and governing authority must be checked.",
+        "review_required": true,
+        "method": "scope-aware rule on extracted lexical concept candidates"
+      }
+    ],
+    "distinctions": [
+      {
+        "id": "D-001",
+        "kind": "scope-difference",
+        "concepts": [
+          "production-mined",
+          "production-dispatched"
+        ],
+        "sources": [
+          "PN-21",
+          "PN-22"
+        ],
+        "assessment": "Different governed metric candidates: comparing their figures directly would be an invalid contradiction test.",
+        "site": "Pilbara North"
+      },
+      {
+        "id": "D-002",
+        "kind": "scope-difference",
+        "concepts": [
+          "mechanical-availability",
+          "operational-readiness"
+        ],
+        "sources": [
+          "PN-05",
+          "PN-06"
+        ],
+        "assessment": "Different governed metric candidates: comparing their figures directly would be an invalid contradiction test.",
+        "site": "Pilbara North"
+      },
+      {
+        "id": "D-003",
+        "kind": "scope-difference",
+        "concepts": [
+          "recognized-expense",
+          "purchase-commitment"
+        ],
+        "sources": [
+          "PN-12",
+          "PN-13"
+        ],
+        "assessment": "Different governed metric candidates: comparing their figures directly would be an invalid contradiction test.",
+        "site": "Pilbara North"
+      },
+      {
+        "id": "D-004",
+        "kind": "scope-difference",
+        "concepts": [
+          "safety-nearmiss",
+          "recordable-injury"
+        ],
+        "sources": [
+          "PN-16",
+          "PN-17"
+        ],
+        "assessment": "Different governed metric candidates: comparing their figures directly would be an invalid contradiction test.",
+        "site": "Pilbara North"
+      }
+    ],
+    "metrics": {
+      "distinct_source_threads": 73,
+      "same_boundary_findings": 2,
+      "measurement_scope_distinctions": 4
+    },
+    "limitation": "Rule-based detection of two claim patterns and four known cross-concept scopes. This is not general contradiction detection."
   }
 }
