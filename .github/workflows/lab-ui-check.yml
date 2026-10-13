@@ -1,0 +1,28 @@
+name: Test interactive lab UI
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'lab/app.js'
+      - 'lab/style.css'
+      - 'lab/data.json'
+      - 'tests/test_lab_frontend.cjs'
+      - '.github/workflows/lab-ui-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check app JavaScript syntax
+        run: node --check lab/app.js
+      - name: Install DOM test dependency
+        run: npm install --no-save --no-audit --no-fund jsdom@26
+      - name: Test browser interactions against actual generated corpus
+        run: node --test tests/test_lab_frontend.cjs
