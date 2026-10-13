@@ -146,14 +146,69 @@
       '<button class="btn primary" data-action="custom-search">Find supporting evidence →</button></div>'+
       '<div id="customResults">'+renderCustomResults()+'</div></div>';
   }
+  function interpretQuery(question) {
+    const lower=question.toLowerCase(),words=tokens(question);
+    const umbrella={
+      production:['production-mined','production-dispatched','production-plan'],
+      availability:['mechanical-availability','operational-readiness'],
+      costs:['recognized-expense','purchase-commitment','forecast-commitment'],
+      cost:['recognized-expense','purchase-commitment','forecast-commitment'],
+      safety:['safety-nearmiss','recordable-injury','isolation-permit'],
+      downtime:['crusher-downtime','maintenance-backlog'],
+      permit:['isolation-permit']
+    };
+    const ids=new Set();
+    for (const [word,concepts] of Object.entries(umbrella)) {
+      if (words.includes(word)) concepts.forEach(id=>ids.add(id));
+    }
+    for (const c of data.concepts) {
+      const possible=[c.name,...c.aliases];
+      if(possible.some(alias=>{
+        const phrase=alias.toLowerCase(), parts=tokens(phrase);
+        return lower.includes(phrase) || (parts.length>0 && parts.every(t=>words.includes(t)));
+      })) ids.add(c.id);
+    }
+    const site=data.enterprise.sites.find(s=>lower.includes(s.toLowerCase()))||null;
+    return {conceptIds:[...ids],site,words};
+  }
   function renderCustomResults() {
-    if (!state.customQuery.trim()) return '<p class="micro" style="margin:15px 0 0">This uses deterministic search of the observed evidence and its extracted concept candidates. It does not generate free-form answers.</p>';
-    const docs=rawSearch(state.customQuery);
-    return '<div class="sep"></div><h4>'+docs.length+' matching documents (top results)</h4>'+
+    if (!state.customQuery.trim()) return '<p class="micro" style="margin:15px 0 0">This uses deterministic search of observed evidence and extracted concepts. It does not generate free-form AI answers.</p>';
+    const interpretation=interpretQuery(state.customQuery);
+    const relevant=new Set(interpretation.conceptIds);
+    const issues=(data.analysis?.issues||[]).filter(item=>relevant.has(item.concept));
+    const distinct=(data.analysis?.distinctions||[]).filter(item=>item.concepts.some(id=>relevant.has(id)));
+    const ranked=data.records.map(r=>{
+      const matchedConcepts=r.extraction.concepts.filter(c=>relevant.has(c.id)).length;
+      const freeWords=interpretation.words.reduce((n,word)=>n+
+        ((r.text+' '+r.title+' '+r.source).toLowerCase().includes(word)?1:0),0);
+      const siteMatch=!interpretation.site||r.site===interpretation.site;
+      return {r,score:siteMatch?(matchedConcepts*5+freeWords):0};
+    }).filter(entry=>entry.score>0).sort((a,b)=>b.score-a.score||a.r.id.localeCompare(b.r.id));
+    const seen=new Set(),docs=[];
+    for(const x of ranked){
+      if(!seen.has(x.r.thread)){docs.push(x.r);seen.add(x.r.thread);}
+      if(docs.length===12)break;
+    }
+    const profiles=interpretation.conceptIds.map(id=>termById(id)).filter(Boolean);
+    const conceptBlock=profiles.length?'<div class="notice" style="margin-bottom:15px"><b>'+profiles.length+
+      ' concept candidates detected in your question.</b> '+(profiles.length>1?'More than one business definition may be relevant. Do not merge their units or scopes.':
+      'Meaning matched against the curated dictionary; ownership and validity still need review.')+
+      '<div class="trace">'+profiles.map(c=>'<button class="source-chip" data-action="open-term" data-id="'+esc(c.id)+'">'+
+      esc(c.name)+' · '+esc(c.owner)+'</button>').join('')+'</div></div>':
+      '<div class="notice amber" style="margin-bottom:15px">No governed term candidate matched the question. Results below use lexical evidence search only.</div>';
+    const warnings=issues.map(i=>'<div class="notice amber" style="margin-bottom:10px"><b>Automatically flagged disagreement: '+
+      esc(termById(i.concept)?.name||i.concept)+'</b><br>'+esc(i.assessment)+
+      '<div class="trace">'+i.source_ids.map(id=>docLink(id)).join('')+'</div></div>').join('');
+    const distinctions=distinct.length?'<p class="micro"><b>Scope warnings:</b> '+esc(distinct.map(d=>
+      d.concepts.map(id=>termById(id)?.name||id).join(' vs ')).join(' · '))+'</p>':'';
+    return '<div class="sep"></div><span class="section-flag">QUERY INTERPRETATION</span>'+
+      '<h4 style="margin-top:14px">Detected site: '+esc(interpretation.site||'all sites')+
+      ' · '+docs.length+' distinct evidence threads retrieved</h4>'+conceptBlock+warnings+distinctions+
       (docs.length?docs.slice(0,9).map(r=>'<div class="comparison-card"><div class="row">'+
       docLink(r.id,r.id)+' '+badge(r.source,'gray')+' '+badge(r.function,'pink')+'</div>'+
       '<p style="margin-top:9px">'+esc(r.text.slice(0,280))+'</p></div>').join(''):
-      '<div class="empty">No matching permitted evidence. Try a different term or inspect the source explorer.</div>');
+      '<div class="empty">No permitted evidence matches the question. Try specifying a site, metric or equipment ID.</div>')+
+      '<p class="micro">Retrieval and concept matching happen locally on the public synthetic snapshot. No network model is answering your question.</p>';
   }
   function sourceFiltered() {
     const q=state.sourceSearch.trim().toLowerCase();
@@ -393,6 +448,7 @@
     if(action==='custom-search'){state.customQuery=$('#customQuery')?.value||'';$('#customResults').innerHTML=renderCustomResults();return;}
     if(action==='page'){state.sourcePage=Math.max(0,state.sourcePage+Number(btn.dataset.dir));render();return;}
     if(action==='term'||action==='graph-term'){state.term=btn.dataset.id;render();return;}
+    if(action==='open-term'){state.term=btn.dataset.id;go('terms');return;}
     if(action==='conflict-filter'){state.conflictFilter=btn.dataset.value;render();return;}
     if(action==='compare'){state.selectedConflict=btn.dataset.id;render();return;}
     if(action==='review'){
