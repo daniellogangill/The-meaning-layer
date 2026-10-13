@@ -239,7 +239,8 @@ def snapshot(seed=42, variants=3, noise=40):
     restricted=[{"id":rid,"source":src,"function":fn,"site":site,"date":date,
                  "classification":"restricted","redacted":True}
                 for rid,fn,src,site,date in RESTRICTED]
-    return {
+    from src.claim_assessment import analyse_snapshot
+    result = {
        "schema_version":2,"seed":seed,
        "data_type":"synthetic","engine_type":"deterministic lexical candidate extraction",
        "notice":"Read-only browser lab. Curated question narratives; extraction metrics actually calculated from observed records. No live LLM or enterprise systems.",
@@ -253,6 +254,9 @@ def snapshot(seed=42, variants=3, noise=40):
                 "sites":len(SITES),"concepts":len(CONCEPTS),
                 "candidate_links":sum(len(p["concepts"]) for p in predictions)}
     }
+    result["analysis"] = analyse_snapshot(result)
+    return result
+
 def write(path, seed=42):
     data=snapshot(seed=seed)
     path=Path(path);path.parent.mkdir(parents=True,exist_ok=True)
