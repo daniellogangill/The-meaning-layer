@@ -1,0 +1,34 @@
+name: Held-out semantic discovery benchmark
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/heldout_cards.py'
+      - 'src/heldout_corpus.py'
+      - 'src/heldout_discovery.py'
+      - 'tests/test_heldout_discovery.py'
+      - '.github/workflows/heldout-discovery.yml'
+      - 'docs/heldout-benchmark.md'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run isolated held-out tests
+        run: python -m unittest tests/test_heldout_discovery.py -v
+      - name: Produce reproducible benchmark and inspectable failures
+        run: python -m src.heldout_discovery --root data/heldout --output data/heldout-report.json
+      - name: Publish benchmark report artifact (no raw truth labels)
+        uses: actions/upload-artifact@v4
+        with:
+          name: heldout-semantic-discovery-report
+          path: |
+            data/heldout-report.json
+            data/heldout/manifest.json
+          retention-days: 14
