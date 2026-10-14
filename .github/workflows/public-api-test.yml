@@ -1,0 +1,29 @@
+name: Validate optional public LLM gateway
+on:
+  push:
+    branches:
+      - feature/llm-public-gateway
+      - main
+    paths:
+      - 'api/**'
+      - 'tests/test_public_api.cjs'
+      - '.github/workflows/public-api-test.yml'
+  pull_request:
+    paths:
+      - 'api/**'
+      - 'tests/test_public_api.cjs'
+      - '.github/workflows/public-api-test.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check api/_lib/meaning.js
+      - run: node --check api/meaning.js
+      - run: node --test tests/test_public_api.cjs
