@@ -84,7 +84,9 @@ module.exports=async function handler(req,res){
   if(!process.env.OPENAI_API_KEY||!process.env.UPSTASH_REDIS_REST_URL||
      !process.env.UPSTASH_REDIS_REST_TOKEN||!process.env.MEANING_IP_HASH_SALT)
     return send(res,503,{error:'Live AI configuration is incomplete.'});
-  const body=typeof req.body==='string'?JSON.parse(req.body):req.body;
+  let body;
+  try{body=typeof req.body==='string'?JSON.parse(req.body):req.body;}
+  catch(_){return send(res,400,{error:'Request must contain valid JSON.'});}
   const question=body&&body.question;
   const validation=validateQuestion(question);
   if(validation)return send(res,400,{error:validation});
