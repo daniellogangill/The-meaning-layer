@@ -25,7 +25,7 @@ test('retrieval is bounded and only uses permitted observed evidence',()=>{
   assert.ok(results.every(r=>data.records.some(d=>d.id===r.id&&d.classification==='internal')));
   assert.ok(results.reduce((sum,r)=>sum+r.text.length,0)<=MAX_CONTEXT_CHARS);
   assert.equal(new Set(results.map(r=>r.id)).size,results.length);
-  assert.equal(retrieve('xxxxxxxxxxxxxxxxxxunmatchedzero'),[]);
+  assert.deepEqual(retrieve('xxxxxxxxxxxxxxxxxxunmatchedzero'),[]);
 });
 test('request is structured and does not let browser submit evidence',()=>{
   const evidence=retrieve('Why has the crusher tripped at Pilbara North?');
