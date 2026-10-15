@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#0c1019">
+  <title>AI Meaning Workbench · Redgum Resources</title>
+  <meta name="description" content="Experiment with enterprise AI discovery and evidence-based answers in a fictional resources company.">
+  <link rel="stylesheet" href="./style.css?edition=3">
+  <style>
+    body{background:radial-gradient(ellipse at 18% 0,#302136 0,transparent 36%),#0b1018}
+    .ai-shell{max-width:1350px;margin:auto;padding:28px clamp(18px,4vw,55px) 90px}
+    .ai-top{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid #324053;padding-bottom:22px}
+    .ai-brand{font-weight:800;letter-spacing:-.02em;font-size:19px}
+    .ai-top a{text-decoration:none;color:#ffbed4;font-weight:750}
+    .ai-hero{margin:48px 0 32px;max-width:900px}
+    .ai-hero h1{font-size:clamp(38px,5.6vw,72px)}
+    .ai-hero p{font-size:17px;max-width:780px}
+    .ai-layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(260px,.7fr);gap:16px}
+    .ai-form{display:grid;gap:14px}.ai-form textarea{height:108px;min-height:108px;resize:vertical;width:100%}
+    .ai-choice{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .ai-choice button{text-align:left;border:1px solid #435063;background:#192432;border-radius:12px;color:#d4deed;padding:17px;min-height:105px}
+    .ai-choice button.active{border-color:#ff82b8;background:#3b293b;color:#fff}
+    .ai-choice strong{display:block;font:700 16px 'Space Grotesk',sans-serif;margin-bottom:8px}
+    .ai-choice small{color:#aebccc;line-height:1.5}
+    .prompt-chips{display:flex;flex-wrap:wrap;gap:7px}
+    .prompt-chips button{border-radius:9px;border:1px solid #465163;background:#192332;color:#d0dce8;padding:8px 10px;text-align:left;font-size:12px}
+    .prompt-chips button:hover{border-color:#ff8ebc}
+    .ai-runbar{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+    .ai-runbar button{flex:0 0 auto}.ai-result{margin-top:21px;padding:19px;background:#17212e;border:1px solid #37495a;border-radius:13px;min-height:120px}
+    .ai-note{color:#becbd8;font-size:13px;line-height:1.55}
+    .ai-status{display:flex;gap:9px;align-items:center;font-size:12px;font-weight:750;color:#d4dbe4}
+    .ai-dot{height:9px;width:9px;border-radius:50%;background:#ffca72}
+    .ai-dot.live{background:#5aebc7;box-shadow:0 0 18px #5aebc764}
+    .ai-divider{height:1px;background:#354154;margin:19px 0}
+    .ai-steps{display:grid;gap:14px;padding:4px 0}
+    .ai-step{display:grid;grid-template-columns:32px 1fr;gap:9px;align-items:start}
+    .ai-step b{border-radius:50%;width:27px;height:27px;display:grid;place-items:center;border:1px solid #a26184;color:#ffb5d3;font-size:12px}
+    .ai-step strong{font-size:13px}.ai-step p{margin:4px 0;font-size:12px}
+    .evidence-row{padding:14px 0;border-top:1px solid #344253}
+    .evidence-row strong{color:#ffb7d0}.evidence-row p{margin:5px 0;font-size:12px}
+    .prop-card{padding:15px;border:1px solid #3d5960;border-radius:11px;background:#182e33;margin:10px 0}
+    .prop-card h3{font-size:17px}.prop-card span{font-size:11px;color:#79f0d0;font-weight:800}
+    .ai-note.warning{background:#30261a;border:1px solid #6d573a;padding:11px;border-radius:9px;color:#ffe0b0}
+    .ai-modal-link{color:#ffb9d1}
+    .danger{color:#ffb3ab}
+    @media(max-width:860px){.ai-layout{grid-template-columns:1fr}}
+    @media(max-width:500px){.ai-choice{grid-template-columns:1fr}.ai-hero{margin:25px 0}}
+  </style>
+</head>
+<body>
+<div class="ai-shell">
+  <header class="ai-top">
+    <div class="ai-brand"><span style="color:#ff83b4">◈</span> The Meaning Layer <span style="font-size:12px;color:#a4b0c1;font-weight:500">/ experimental AI workbench</span></div>
+    <div class="row"><a href="../">← Full lab</a><span class="badge live">Synthetic Redgum Resources</span></div>
+  </header>
+  <section class="ai-hero">
+    <span class="eyebrow">PROTOTYPE 04 · THE EXPERIMENT</span>
+    <h1>Can AI discover what a business <em style="font-style:normal;color:#ff8fbe">actually means?</em></h1>
+    <p>Explore genuine source retrieval, propose definitions and investigate conflicting reporting boundaries. When the live model is enabled, contrast its interpretation with deterministic evidence search.</p>
+  </section>
+  <div class="ai-layout">
+    <div>
+      <section class="panel">
+        <div class="section-head"><div><h2>Run an experiment</h2><p>Select the question mode and use a fictional executive challenge.</p></div><span class="badge" id="apiChip">Checking experimental AI status…</span></div>
+        <div class="ai-choice" role="group" aria-label="Experiment type">
+          <button type="button" id="modeReason" class="active" aria-pressed="true"><strong>◈ Answer with evidence</strong><small>What can the sources responsibly tell us about a business problem?</small></button>
+          <button type="button" id="modeDiscover" aria-pressed="false"><strong>⌘ Discover candidate meaning</strong><small>Propose scope-specific definitions and flag uncertainty for a steward.</small></button>
+        </div>
+        <div class="ai-form" style="margin-top:20px">
+          <label class="input-label" for="question">What would you like to investigate?</label>
+          <textarea class="control" id="question" maxlength="240">Why did Pilbara North miss its June dispatch plan?</textarea>
+          <div class="prompt-chips" aria-label="Try an example">
+            <button type="button" data-q="Why did Pilbara North miss its June dispatch plan?">Production variance</button>
+            <button type="button" data-q="Do Operations and Maintenance mean the same thing by availability?">Fleet availability</button>
+            <button type="button" data-q="Why do the financial forecasts for June disagree?">Finance definitions</button>
+            <button type="button" data-q="Is the C-17 isolation permit open or closed?">Safety permit</button>
+          </div>
+          <div class="ai-runbar"><button type="button" class="btn primary" id="preview">Inspect sources locally →</button><button type="button" class="btn" id="runModel" disabled>Run live AI</button></div>
+          <div class="ai-note warning" id="guardMessage">A real model call is disabled unless the provider account and shared budget are safely configured. Local evidence exploration remains free.</div>
+        </div>
+        <div id="result" class="ai-result" role="status" aria-live="polite">
+          <h3>Ready to explore</h3><p>Choose a question and inspect its source evidence. This deterministic mode makes no paid API calls.</p>
+        </div>
+      </section>
+      <section class="panel" style="margin-top:16px">
+        <h3>How to read the output</h3>
+        <div class="ai-steps">
+          <div class="ai-step"><b>1</b><div><strong>Source evidence</strong><p>Original document IDs and excerpts that support an interpretation.</p></div></div>
+          <div class="ai-step"><b>2</b><div><strong>Candidate definitions</strong><p>Model proposals are not approved enterprise truth; provenance matters.</p></div></div>
+          <div class="ai-step"><b>3</b><div><strong>Disagreement and uncertainty</strong><p>Check measurement scope, date, authority and whether the source proves causation.</p></div></div>
+          <div class="ai-step"><b>4</b><div><strong>Accountable governance</strong><p>An authorised human steward must validate changes before a definition is published.</p></div></div>
+        </div>
+      </section>
+    </div>
+    <aside class="panel">
+      <span class="section-flag">COST & GOVERNANCE</span>
+      <h2 style="margin-top:14px">Small budget.<br>Clear boundaries.</h2>
+      <div class="ai-divider"></div>
+      <div class="ai-status"><span class="ai-dot" id="statusDot"></span><span id="statusText">Live AI not verified</span></div>
+      <div class="stat-grid" style="grid-template-columns:1fr 1fr;margin:20px 0">
+        <div class="stat"><div class="value">US$5</div><div class="caption">Overall monthly ceiling</div></div>
+        <div class="stat"><div class="value">US$3</div><div class="caption">Reserved model allocation</div></div>
+      </div>
+      <div class="ai-divider"></div>
+      <h3>What this experiment is</h3>
+      <p class="ai-note">A publicly inspectable prototype with entirely synthetic enterprise records, bounded model requests, source-linked answers and locally simulated human approval.</p>
+      <h3>What it isn't</h3>
+      <p class="ai-note">An enterprise connector, permission-aware production platform, or an independently validated causal decision engine.</p>
+      <div class="ai-divider"></div>
+      <p class="ai-note">The model integration can remain off while the deterministic lab stays fully interactive. Browser-side prompts never include API keys or real customer data.</p>
+      <a class="ai-modal-link" href="https://github.com/daniellogangill/The-meaning-layer" target="_blank" rel="noopener">Explore the open-source architecture ↗</a>
+    </aside>
+  </div>
+  <p class="micro" style="margin-top:45px">Design My Thinking · Research prototype with fictional mining data · No user accounts · Cost-capped optional model backend.</p>
+</div>
+<script src="./ai.js?edition=3" defer></script>
+</body>
+</html>
