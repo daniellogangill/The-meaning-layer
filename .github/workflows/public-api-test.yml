@@ -3,15 +3,20 @@ on:
   push:
     branches:
       - feature/llm-public-gateway
+      - feature/five-dollar-budget-and-ai-workbench
       - main
     paths:
       - 'api/**'
       - 'tests/test_public_api.cjs'
+      - 'tests/test_budget.cjs'
+      - 'tests/test_discover_gateway.cjs'
       - '.github/workflows/public-api-test.yml'
   pull_request:
     paths:
       - 'api/**'
       - 'tests/test_public_api.cjs'
+      - 'tests/test_budget.cjs'
+      - 'tests/test_discover_gateway.cjs'
       - '.github/workflows/public-api-test.yml'
   workflow_dispatch:
 permissions:
@@ -26,4 +31,7 @@ jobs:
           node-version: '22'
       - run: node --check api/_lib/meaning.js
       - run: node --check api/meaning.js
-      - run: node --test tests/test_public_api.cjs
+      - run: node --check api/_lib/budget.js
+      - run: node --check api/discover.js
+      - run: node --check api/status.js
+      - run: node --test tests/test_public_api.cjs tests/test_budget.cjs tests/test_discover_gateway.cjs

@@ -61,7 +61,7 @@ test('without quota storage or API secret live queries fail closed',async()=>{
   const res=response();
   await api(request(),res);
   assert.equal(res.statusCode,503);
-  assert.match(res.json.error,/incomplete/i);
+  assert.match(res.json.error,/monthly spending protections|incomplete/i);
   process.env.MEANING_PUBLIC_LLM_ENABLED=saved.MEANING_PUBLIC_LLM_ENABLED||'';
   if(saved.OPENAI_API_KEY!==undefined)process.env.OPENAI_API_KEY=saved.OPENAI_API_KEY;
 });

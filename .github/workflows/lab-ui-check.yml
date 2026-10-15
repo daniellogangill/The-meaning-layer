@@ -1,13 +1,16 @@
 name: Test interactive lab UI
 on:
   push:
-    branches: [main]
+    branches: [main, feature/five-dollar-budget-and-ai-workbench]
     paths:
       - 'index.html'
       - 'lab/app.js'
+      - 'lab/ai.html'
+      - 'lab/ai.js'
       - 'lab/style.css'
       - 'lab/data.json'
       - 'tests/test_lab_frontend.cjs'
+      - 'tests/test_ai_workbench.cjs'
       - '.github/workflows/lab-ui-check.yml'
   workflow_dispatch:
 permissions:
@@ -21,8 +24,10 @@ jobs:
         with:
           node-version: '22'
       - name: Check app JavaScript syntax
-        run: node --check lab/app.js
+        run: |
+          node --check lab/app.js
+          node --check lab/ai.js
       - name: Install DOM test dependency
         run: npm install --no-save --no-audit --no-fund jsdom@26
       - name: Test browser interactions against actual generated corpus
-        run: node --test tests/test_lab_frontend.cjs
+        run: node --test tests/test_lab_frontend.cjs tests/test_ai_workbench.cjs

@@ -2,8 +2,8 @@
 /** Optional Vercel function for the public synthetic-data lab.
  * Disabled by default; no unauthenticated paid calls without a real quota store.
  */
-const crypto=require('node:crypto');
 const {validateQuestion,retrieve,buildRequest,parseResponse} = require('./_lib/meaning');
+const {MODEL,ready,budgetConfiguration,reserveModelBudget,ensureTextEnvelope} = require('./_lib/budget');
 const DEFAULT_ORIGINS=[
   'https://daniellogangill.github.io',
   'https://designmythinking.xyz',
@@ -19,40 +19,6 @@ function send(res,status,json){
   res.setHeader('Cache-Control','no-store');
   res.end(JSON.stringify(json));
 }
-function envInt(name,fallback,max){
-  const val=Number(process.env[name]||fallback);
-  return Number.isSafeInteger(val)&&val>0&&val<=max?val:fallback;
-}
-async function acquireQuota(req){
-  const url=process.env.UPSTASH_REDIS_REST_URL;
-  const token=process.env.UPSTASH_REDIS_REST_TOKEN;
-  const salt=process.env.MEANING_IP_HASH_SALT;
-  if(!url||!token||!salt)throw new Error('Quota storage is not configured.');
-  const ip=(req.headers['x-vercel-forwarded-for']||req.headers['x-forwarded-for']||req.socket?.remoteAddress||'unknown').split(',')[0].trim();
-  const hashed=crypto.createHash('sha256').update(salt+':'+ip).digest('hex').slice(0,32);
-  const day=new Date().toISOString().slice(0,10);
-  const keys=['meaning-lab:daily:'+day,'meaning-lab:ip:'+day+':'+hashed];
-  const limitGlobal=envInt('MEANING_DAILY_GLOBAL',100,1000);
-  const limitIp=envInt('MEANING_DAILY_PER_IP',5,50);
-  const script=[
-    "local total=redis.call('INCR',KEYS[1])",
-    "if total==1 then redis.call('EXPIRE',KEYS[1],90000) end",
-    "local own=redis.call('INCR',KEYS[2])",
-    "if own==1 then redis.call('EXPIRE',KEYS[2],90000) end",
-    "if total>tonumber(ARGV[1]) or own>tonumber(ARGV[2]) then return 0 end",
-    "return 1"
-  ].join(' ');
-  const response=await fetch(url.replace(/\/$/,'')+'/',{
-    method:'POST',
-    headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
-    body:JSON.stringify(['EVAL',script,'2',...keys,String(limitGlobal),String(limitIp)]),
-    signal:AbortSignal.timeout(5000)
-  });
-  if(!response.ok)throw new Error('Quota service unavailable.');
-  const result=await response.json();
-  if(result.error)throw new Error('Quota service returned an error.');
-  return Number(result.result)===1;
-}
 async function queryModel(body){
   const response=await fetch('https://api.openai.com/v1/responses',{
     method:'POST',
@@ -66,10 +32,18 @@ async function queryModel(body){
   if(!response.ok)throw new Error('Model request failed.');
   return response.json();
 }
+function sameOrigin(origin,req){
+  if(!origin)return false;
+  try{
+    const url=new URL(origin);
+    const host=String(req.headers?.['x-forwarded-host']||req.headers?.host||'');
+    return url.protocol==='https:' && url.host===host;
+  }catch(_){return false;}
+}
 module.exports=async function handler(req,res){
   const origin=String(req.headers?.origin||'');
   const allowed=getOriginAllowlist();
-  if(origin && !allowed.has(origin))return send(res,403,{error:'Origin not permitted.'});
+  if(origin && !allowed.has(origin) && !sameOrigin(origin,req))return send(res,403,{error:'Origin not permitted.'});
   if(origin){
     res.setHeader('Access-Control-Allow-Origin',origin);
     res.setHeader('Vary','Origin');
@@ -81,9 +55,7 @@ module.exports=async function handler(req,res){
   // The endpoint cannot accidentally incur charges by a deployment alone.
   if(process.env.MEANING_PUBLIC_LLM_ENABLED!=='true')return send(res,503,
     {error:'Live AI is not enabled. The deterministic lab remains available.'});
-  if(!process.env.OPENAI_API_KEY||!process.env.UPSTASH_REDIS_REST_URL||
-     !process.env.UPSTASH_REDIS_REST_TOKEN||!process.env.MEANING_IP_HASH_SALT)
-    return send(res,503,{error:'Live AI configuration is incomplete.'});
+  if(!ready())return send(res,503,{error:'Live AI is awaiting verified monthly spending protections.'});
   let body;
   try{body=typeof req.body==='string'?JSON.parse(req.body):req.body;}
   catch(_){return send(res,400,{error:'Request must contain valid JSON.'});}
@@ -95,19 +67,24 @@ module.exports=async function handler(req,res){
     status:'insufficient',answer:'No relevant permitted synthetic evidence was found.',
     caveats:['Try a question about Pilbara North, C-17, June production, maintenance, finance, or safety.'],
     next_steps:[],citations:[],evidence:[],mode:'live-model-grounded'});
-  let allowedByBudget=false;
-  try{allowedByBudget=await acquireQuota(req);}
-  catch(_){return send(res,503,{error:'Live AI quota protection is temporarily unavailable.'});}
-  if(!allowedByBudget)return send(res,429,{error:'The public demo allowance has been reached. Try again tomorrow.'});
+  const requestBody=buildRequest(question,evidence,MODEL);
+  try{ensureTextEnvelope(requestBody);}
+  catch(_){return send(res,413,{error:'Source context too long for the bounded model allocation.'});}
+  let budget;
+  try{budget=await reserveModelBudget(req);}
+  catch(_){return send(res,503,{error:'Usage budget service unavailable; no model call was made.'});}
+  if(!budget.allowed) return send(res,429,{error:
+    budget.reason==='monthly_budget'?'Monthly AI allocation reached. Try again next month.':
+    'Public demonstration allowance reached. Try again tomorrow.'});
   try{
-    const model=process.env.MEANING_LLM_MODEL||'gpt-5.4-nano';
-    const response=await queryModel(buildRequest(question,evidence,model));
+    const model=MODEL;
+    const response=await queryModel(requestBody);
     const output=parseResponse(response,evidence);
     const used=output.citations.map(id=>evidence.find(r=>r.id===id)).filter(Boolean);
     return send(res,200,{...output,
       evidence:used.map(({id,source,site,date,function:department,text})=>({id,source,site,date,department,text})),
       mode:'live-model-grounded',
-      model,usage:{
+      model,allocation:{remainingUsDollars:Number((budget.remainingMonthlyMicro/1000000).toFixed(4)),monthlyModelLimitUsd:3,overallCeilingUsd:5},usage:{
         input_tokens:response.usage?.input_tokens||0,
         output_tokens:response.usage?.output_tokens||0
       }});
