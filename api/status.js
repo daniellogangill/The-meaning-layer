@@ -1,12 +1,20 @@
 'use strict';
 const {ready,MODEL}=require('./_lib/budget');
+function sameOrigin(origin,req){
+  if(!origin)return false;
+  try{
+    const url=new URL(origin);
+    const host=String(req.headers?.['x-forwarded-host']||req.headers?.host||'');
+    return url.protocol==='https:' && url.host===host;
+  }catch(_){return false;}
+}
 module.exports=(req,res)=>{
   const origins=new Set(['https://daniellogangill.github.io',
     'https://designmythinking.xyz','https://www.designmythinking.xyz']);
   const extras=String(process.env.MEANING_ALLOWED_ORIGINS||'').split(',').map(s=>s.trim());
   extras.forEach(s=>s&&origins.add(s));
   const origin=String(req.headers?.origin||'');
-  if(origin&&!origins.has(origin)){
+  if(origin&&!origins.has(origin)&&!sameOrigin(origin,req)){
     res.statusCode=403;
     res.setHeader('Content-Type','application/json');
     res.end(JSON.stringify({error:'Origin not permitted.'}));
