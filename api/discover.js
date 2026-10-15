@@ -98,11 +98,19 @@ async function providerCall(payload){
   if(!response.ok)throw new Error('Model unavailable.');
   return response.json();
 }
+function sameOrigin(origin,req){
+  if(!origin)return false;
+  try{
+    const url=new URL(origin);
+    const host=String(req.headers?.['x-forwarded-host']||req.headers?.host||'');
+    return url.protocol==='https:' && url.host===host;
+  }catch(_){return false;}
+}
 module.exports=async function handler(req,res){
   const origin=String(req.headers?.origin||'');
   const extras=(process.env.MEANING_ALLOWED_ORIGINS||'').split(',').map(s=>s.trim()).filter(Boolean);
   const origins=new Set([...ORIGINS,...extras]);
-  if(origin && !origins.has(origin))return send(res,403,{error:'Origin not permitted.'});
+  if(origin && !origins.has(origin) && !sameOrigin(origin,req))return send(res,403,{error:'Origin not permitted.'});
   if(origin){
     res.setHeader('Access-Control-Allow-Origin',origin);
     res.setHeader('Vary','Origin');
