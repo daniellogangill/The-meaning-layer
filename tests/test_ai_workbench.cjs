@@ -9,9 +9,10 @@ const html=fs.readFileSync(path.join(root,'lab/ai.html'),'utf8');
 const script=fs.readFileSync(path.join(root,'lab/ai.js'),'utf8');
 const dataset=JSON.parse(fs.readFileSync(path.join(root,'lab/data.json'),'utf8'));
 
-async function openWorkbench(enabled=false){
-  const dom=new JSDOM(html,{url:'https://example.test/lab/ai.html',
+async function openWorkbench(enabled=false,pageUrl='https://example.test/lab/ai.html'){
+  const dom=new JSDOM(html,{url:pageUrl,
     runScripts:'outside-only',pretendToBeVisual:true});
+  const apiBase=['daniellogangill.github.io','designmythinking.xyz','www.designmythinking.xyz'].includes(new URL(pageUrl).hostname)?'https://meaning-layer-lab.vercel.app':'';
   const calls=[];
   const errors=[];
   const w=dom.window;const d=w.document;
@@ -19,14 +20,14 @@ async function openWorkbench(enabled=false){
   w.fetch=async(url,init)=>{
     calls.push({url,init});
     if(url==='./data.json')return {ok:true,json:async()=>dataset};
-    if(url==='/api/status')return {ok:true,json:async()=>({available:enabled,model:'gpt-5.6-luna'})};
-    if(url==='/api/meaning')return {ok:true,json:async()=>({
+    if(url===apiBase+'/api/status')return {ok:true,json:async()=>({available:enabled,model:'gpt-5.6-luna'})};
+    if(url===apiBase+'/api/meaning')return {ok:true,json:async()=>({
       status:'answered',answer:'Synthetic evidence points to different measurement boundaries.',
       caveats:['Awaiting source steward validation'],next_steps:['Verify June dispatch'],
       citations:['PN-01'],evidence:[dataset.records.find(r=>r.id==='PN-01')],
       model:'gpt-5.6-luna'
     })};
-    if(url==='/api/discover')return {ok:true,json:async()=>({
+    if(url===apiBase+'/api/discover')return {ok:true,json:async()=>({
       summary:'Potential scope-specific interpretations',status:'unapproved',
       proposals:[{term:'Mined tonnes',definition:'Extracted before processing',
         scope:'Operations',evidence_ids:['PN-01'],uncertainty:'Check site policy'}],
