@@ -12,6 +12,18 @@ on:
       - 'tests/test_lab_frontend.cjs'
       - 'tests/test_ai_workbench.cjs'
       - '.github/workflows/lab-ui-check.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'lab/app.js'
+      - 'lab/ai.html'
+      - 'lab/ai.js'
+      - 'lab/style.css'
+      - 'lab/data.json'
+      - 'tests/test_lab_frontend.cjs'
+      - 'tests/test_ai_workbench.cjs'
+      - '.github/workflows/lab-ui-check.yml'
   workflow_dispatch:
 permissions:
   contents: read
