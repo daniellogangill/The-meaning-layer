@@ -73,3 +73,36 @@ test('live discovery visibly identifies proposals as unapproved',async()=>{
   assert.deepEqual(errors,[]);
   dom.window.close();
 });
+
+test('static-host routing uses the dedicated gateway without changing local fallback',async()=>{
+  const gateway='https://meaning-layer-lab.vercel.app';
+  const hosts=[
+    'https://daniellogangill.github.io/The-meaning-layer/lab/ai.html',
+    'https://designmythinking.xyz/prototypes/meaning-layer/lab/ai.html',
+    'https://www.designmythinking.xyz/prototypes/meaning-layer/lab/ai.html'
+  ];
+  for(const host of hosts){
+    const offline=await openWorkbench(false,host);
+    assert.ok(offline.calls.some(x=>x.url===gateway+'/api/status'));
+    assert.equal(offline.d.querySelector('#runModel').disabled,true);
+    offline.d.querySelector('#preview').click();
+    await new Promise(resolve=>setTimeout(resolve,20));
+    assert.match(offline.d.querySelector('#result').textContent,/NOT a model-generated answer/);
+    assert.equal(offline.calls.filter(x=>String(x.url).startsWith(gateway+'/api/')&&x.url!==gateway+'/api/status').length,0);
+    assert.deepEqual(offline.errors,[]);
+    offline.dom.window.close();
+
+    const live=await openWorkbench(true,host);
+    assert.equal(live.d.querySelector('#runModel').disabled,false);
+    live.d.querySelector('#runModel').click();
+    await new Promise(resolve=>setTimeout(resolve,20));
+    assert.equal(live.calls.filter(x=>x.url===gateway+'/api/meaning').length,1);
+    live.d.querySelector('#modeDiscover').click();
+    live.d.querySelector('#runModel').click();
+    await new Promise(resolve=>setTimeout(resolve,20));
+    assert.equal(live.calls.filter(x=>x.url===gateway+'/api/discover').length,1);
+    assert.match(live.d.querySelector('#result').textContent,/UNAPPROVED MODEL PROPOSAL/);
+    assert.deepEqual(live.errors,[]);
+    live.dom.window.close();
+  }
+});
