@@ -1,6 +1,8 @@
 'use strict';
 (function () {
   const $=s=>document.querySelector(s);
+  const API_BASE=['daniellogangill.github.io','designmythinking.xyz','www.designmythinking.xyz'].includes(window.location.hostname)?'https://meaning-layer-lab.vercel.app':'';
+
   const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,
     c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let sourceData=null;
@@ -114,7 +116,7 @@
       const timer=setTimeout(()=>controller.abort(),25000);
       let res;
       try{
-        res=await fetch(mode==='reason'?'/api/meaning':'/api/discover',{
+        res=await fetch(API_BASE+(mode==='reason'?'/api/meaning':'/api/discover'),{
           method:'POST',headers:{'Content-Type':'application/json'},
           body:JSON.stringify({question:q}),signal:controller.signal
         });
@@ -134,7 +136,7 @@
       sourceData=await response.json();
     }catch(_){sourceData=null;}
     try{
-      const status=await fetch('/api/status',{cache:'no-store'});
+      const status=await fetch(API_BASE+'/api/status',{cache:'no-store'});
       if(!status.ok)throw new Error('No live gateway on this host');
       const info=await status.json();
       live=info.available===true;
