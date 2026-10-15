@@ -1,5 +1,7 @@
 # Lightweight LLM integration — launch plan
 
+> **Updated 15 Oct 2026:** The project's binding cost controls are documented in [US$5/month release gate](five-dollar-release-gate.md). They supersede the older illustrative US$10–20/month figures, default model names and daily limits below. The live service remains off until both application and provider hard-limit protections are configured.
+
 The existing GitHub Pages demonstration is public and fully independent of
 the new optional gateway. This branch builds a **secure, off-by-default**
 serverless endpoint for the first genuine model-augmented Q&A experiment.
