@@ -4,6 +4,10 @@ on:
     branches: [main, feature/five-dollar-budget-and-ai-workbench]
     paths:
       - 'index.html'
+      - 'journey.html'
+      - 'lab/journey.js'
+      - 'lab/journey.css'
+      - 'tests/test_guided_journey.cjs'
       - 'lab/app.js'
       - 'lab/ai.html'
       - 'lab/ai.js'
@@ -16,6 +20,10 @@ on:
     branches: [main]
     paths:
       - 'index.html'
+      - 'journey.html'
+      - 'lab/journey.js'
+      - 'lab/journey.css'
+      - 'tests/test_guided_journey.cjs'
       - 'lab/app.js'
       - 'lab/ai.html'
       - 'lab/ai.js'
@@ -39,7 +47,8 @@ jobs:
         run: |
           node --check lab/app.js
           node --check lab/ai.js
+          node --check lab/journey.js
       - name: Install DOM test dependency
         run: npm install --no-save --no-audit --no-fund jsdom@26
       - name: Test browser interactions against actual generated corpus
-        run: node --test tests/test_lab_frontend.cjs tests/test_ai_workbench.cjs
+        run: node --test tests/test_lab_frontend.cjs tests/test_ai_workbench.cjs tests/test_guided_journey.cjs
