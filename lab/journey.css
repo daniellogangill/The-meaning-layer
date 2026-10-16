@@ -22,3 +22,10 @@
 .journey-decision-gate h3{font-size:22px;margin:10px 0}
 .journey-decision-gate p{font-size:13px;line-height:1.65}
 .journey-history{font-size:12px;line-height:1.8;color:#c9d7e4;padding-left:23px}
+
+.journey-relations{margin:30px 0 20px;padding:22px 18px;border:1px solid #4e6072;border-radius:14px;background:#15222e}
+.journey-relations>h3{font-size:21px;margin:10px 0}
+.journey-relations>p{font-size:13px;color:#bfcfe0;line-height:1.6}
+.journey-relations .journey-cards{margin-bottom:0}
+.journey-relations details{background:#15202b}
+@media(max-width:540px){.journey-relations{padding:17px 12px}}
