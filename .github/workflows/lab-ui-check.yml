@@ -8,6 +8,9 @@ on:
       - 'lab/journey.js'
       - 'lab/journey.css'
       - 'tests/test_guided_journey.cjs'
+      - 'tests/test_decision_policy.cjs'
+      - 'tests/test_evidence_smoke.cjs'
+      - 'lab/decision-policy.js'
       - 'lab/app.js'
       - 'lab/ai.html'
       - 'lab/ai.js'
@@ -48,7 +51,8 @@ jobs:
           node --check lab/app.js
           node --check lab/ai.js
           node --check lab/journey.js
+          node --check lab/decision-policy.js
       - name: Install DOM test dependency
         run: npm install --no-save --no-audit --no-fund jsdom@26
       - name: Test browser interactions against actual generated corpus
-        run: node --test tests/test_lab_frontend.cjs tests/test_ai_workbench.cjs tests/test_guided_journey.cjs
+        run: node --test tests/test_lab_frontend.cjs tests/test_ai_workbench.cjs tests/test_guided_journey.cjs tests/test_decision_policy.cjs tests/test_evidence_smoke.cjs

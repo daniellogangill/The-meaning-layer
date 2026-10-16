@@ -14,3 +14,11 @@
 .journey-full-text{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px!important}
 @media(max-width:850px){.journey-evidence-filters{grid-template-columns:repeat(2,minmax(0,1fr))}.journey-evidence-filters label:first-child{grid-column:1/-1}}
 @media(max-width:540px){.journey-evidence-filters{grid-template-columns:1fr}.journey-evidence-filters label:first-child{grid-column:auto}}
+
+/* A simulated decision gate reflects stewardship without rewriting source facts. */
+.journey-decision-gate{padding:20px;border:1px solid #557d86;border-radius:13px;margin:22px 0;background:#1b2c36}
+.journey-decision-gate[data-gate-status=approve]{border-color:#64cdb1;background:#17342f}
+.journey-decision-gate[data-gate-status=reject]{border-color:#ce9b74;background:#392a25}
+.journey-decision-gate h3{font-size:22px;margin:10px 0}
+.journey-decision-gate p{font-size:13px;line-height:1.65}
+.journey-history{font-size:12px;line-height:1.8;color:#c9d7e4;padding-left:23px}
