@@ -1,7 +1,27 @@
 'use strict';const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const {test}=require('node:test');const {JSDOM}=require('jsdom');const root=path.resolve(__dirname,'..');const html=fs.readFileSync(path.join(root,'journey.html'),'utf8'),js=fs.readFileSync(path.join(root,'lab/journey.js'),'utf8'),policy=fs.readFileSync(path.join(root,'lab/decision-policy.js'),'utf8'),data=JSON.parse(fs.readFileSync(path.join(root,'lab/data.json'),'utf8'));
 async function boot(fail=false){const dom=new JSDOM(html,{url:'https://example.test/journey.html',runScripts:'outside-only'}),w=dom.window,errors=[];w.addEventListener('error',e=>errors.push(e.message));w.fetch=async()=>{if(fail)throw Error('offline');return {ok:true,json:async()=>data};};w.eval(policy);w.eval(js);await new Promise(r=>setTimeout(r,20));return {w,d:w.document,errors};}
 function click(d,s){const e=d.querySelector(s);assert.ok(e,'missing '+s);e.dispatchEvent(new d.defaultView.MouseEvent('click',{bubbles:true}));}
-test('all five stages and initial interpretation work',async()=>{const {w,d,errors}=await boot();assert.match(d.querySelector('#journeyContent').textContent,/Pilbara North/);assert.equal(d.querySelectorAll('#stepNav button').length,5);click(d,'[data-choice="2"]');assert.match(d.querySelector('#journeyContent').textContent,/Good instinct/);for(let i=0;i<4;i++)click(d,'#continue');assert.match(d.querySelector('#journeyContent').textContent,/designed comparison/);assert.deepEqual(errors,[]);w.close();});
+test('all five stages and initial interpretation work',async()=>{const {w,d,errors}=await boot();assert.match(d.querySelector('#journeyContent').textContent,/Pilbara North/);assert.equal(d.querySelectorAll('#stepNav button').length,5);click(d,'[data-choice="2"]');assert.match(d.querySelector('#journeyContent').textContent,/Good instinct/);for(let i=0;i<4;i++)click(d,'#continue');assert.match(d.querySelector('#journeyContent').textContent,/more accountable interpretation/i);assert.ok(d.querySelector('[data-gate-status="pending"]'));assert.deepEqual(errors,[]);w.close();});
 test('real evidence and provenance are inspectable',async()=>{const {w,d,errors}=await boot();click(d,'#continue');click(d,'[data-source="PN-01"]');assert.match(d.querySelector('#sourceDetail').textContent,/ORIGINAL SYNTHETIC EVIDENCE/);assert.match(d.querySelector('#sourceDetail').textContent,/Source ID: PN-01/);assert.deepEqual(errors,[]);w.close();});
-test('scenario reset, safety abstention and local-only governance',async()=>{const {w,d,errors}=await boot();click(d,'[data-choice="0"]');const s=d.querySelector('#scenario');s.value='safety';s.dispatchEvent(new w.Event('change',{bubbles:true}));assert.match(d.querySelector('#journeyContent').textContent,/isolation permit/i);click(d,'[data-step="3"]');click(d,'[data-review="defer"]');assert.match(d.querySelector('#journeyContent').textContent,/Session-only review/);click(d,'[data-step="4"]');assert.match(d.querySelector('#journeyContent').textContent,/must abstain/);assert.ok(d.querySelector('[data-gate-status="defer"]'));assert.match(d.querySelector('#journeyContent').textContent,/Permit status remains unknown/);assert.equal(w.localStorage.length,0);assert.deepEqual(errors,[]);w.close();});
+test('scenario reset, safety abstention and local-only governance',async()=>{const {w,d,errors}=await boot();click(d,'[data-choice="0"]');const s=d.querySelector('#scenario');s.value='safety';s.dispatchEvent(new w.Event('change',{bubbles:true}));assert.match(d.querySelector('#journeyContent').textContent,/isolation permit/i);click(d,'[data-step="3"]');click(d,'[data-review="defer"]');assert.match(d.querySelector('#journeyContent').textContent,/Safety review deferred/);click(d,'[data-step="4"]');assert.match(d.querySelector('#journeyContent').textContent,/must abstain/);assert.ok(d.querySelector('[data-gate-status="defer"]'));assert.match(d.querySelector('#journeyContent').textContent,/Permit status remains unknown/);assert.equal(w.localStorage.length,0);assert.deepEqual(errors,[]);w.close();});
 test('offline state fails clearly without paid model fallback',async()=>{const {w,d}=await boot(true);assert.match(d.querySelector('#journeyContent').textContent,/could not be loaded/);w.close();});
+
+test('governance changes the production decision gate but not source facts',async()=>{
+  const {w,d,errors}=await boot();
+  click(d,'[data-step="3"]');click(d,'[data-review="approve"]');click(d,'[data-step="4"]');
+  assert.ok(d.querySelector('[data-gate-status="approve"]'));
+  assert.match(d.querySelector('#journeyContent').textContent,/Scoped distinction accepted/);
+  assert.match(d.querySelector('#journeyContent').textContent,/42,800 saleable tonnes dispatched/);
+  click(d,'[data-step="3"]');click(d,'[data-review="reject"]');click(d,'[data-step="4"]');
+  assert.ok(d.querySelector('[data-gate-status="reject"]'));
+  assert.match(d.querySelector('#journeyContent').textContent,/Scope proposal rejected/);
+  assert.match(d.querySelector('#journeyContent').textContent,/42,800 saleable tonnes dispatched/);
+  assert.deepEqual(errors,[]);w.close();
+});
+test('finance hold is not a forecast resolution',async()=>{
+  const {w,d,errors}=await boot();const s=d.querySelector('#scenario');s.value='finance';s.dispatchEvent(new w.Event('change',{bubbles:true}));
+  click(d,'[data-step="3"]');click(d,'[data-review="approve"]');click(d,'[data-step="4"]');
+  assert.match(d.querySelector('#journeyContent').textContent,/Forecast placed on hold/);
+  assert.match(d.querySelector('#journeyContent').textContent,/Neither A\$13\.7m nor A\$14\.2m becomes the approved/);
+  assert.deepEqual(errors,[]);w.close();
+});
