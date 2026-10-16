@@ -1,5 +1,5 @@
-'use strict';const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const {test}=require('node:test');const {JSDOM}=require('jsdom');const root=path.resolve(__dirname,'..');const html=fs.readFileSync(path.join(root,'journey.html'),'utf8'),js=fs.readFileSync(path.join(root,'lab/journey.js'),'utf8'),policy=fs.readFileSync(path.join(root,'lab/decision-policy.js'),'utf8'),data=JSON.parse(fs.readFileSync(path.join(root,'lab/data.json'),'utf8'));
-async function boot(fail=false){const dom=new JSDOM(html,{url:'https://example.test/journey.html',runScripts:'outside-only'}),w=dom.window,errors=[];w.addEventListener('error',e=>errors.push(e.message));w.fetch=async()=>{if(fail)throw Error('offline');return {ok:true,json:async()=>data};};w.eval(policy);w.eval(js);await new Promise(r=>setTimeout(r,20));return {w,d:w.document,errors};}
+'use strict';const assert=require('node:assert/strict');const fs=require('node:fs');const path=require('node:path');const {test}=require('node:test');const {JSDOM}=require('jsdom');const root=path.resolve(__dirname,'..');const html=fs.readFileSync(path.join(root,'journey.html'),'utf8'),js=fs.readFileSync(path.join(root,'lab/journey.js'),'utf8'),policy=fs.readFileSync(path.join(root,'lab/decision-policy.js'),'utf8'),relations=fs.readFileSync(path.join(root,'lab/meaning-relations.js'),'utf8'),data=JSON.parse(fs.readFileSync(path.join(root,'lab/data.json'),'utf8'));
+async function boot(fail=false){const dom=new JSDOM(html,{url:'https://example.test/journey.html',runScripts:'outside-only'}),w=dom.window,errors=[];w.addEventListener('error',e=>errors.push(e.message));w.fetch=async()=>{if(fail)throw Error('offline');return {ok:true,json:async()=>data};};w.eval(policy);w.eval(relations);w.eval(js);await new Promise(r=>setTimeout(r,20));return {w,d:w.document,errors};}
 function click(d,s){const e=d.querySelector(s);assert.ok(e,'missing '+s);e.dispatchEvent(new d.defaultView.MouseEvent('click',{bubbles:true}));}
 test('all five stages and initial interpretation work',async()=>{const {w,d,errors}=await boot();assert.match(d.querySelector('#journeyContent').textContent,/Pilbara North/);assert.equal(d.querySelectorAll('#stepNav button').length,5);click(d,'[data-choice="2"]');assert.match(d.querySelector('#journeyContent').textContent,/Good instinct/);for(let i=0;i<4;i++)click(d,'#continue');assert.match(d.querySelector('#journeyContent').textContent,/more accountable interpretation/i);assert.ok(d.querySelector('[data-gate-status="pending"]'));assert.deepEqual(errors,[]);w.close();});
 test('real evidence and provenance are inspectable',async()=>{const {w,d,errors}=await boot();click(d,'#continue');click(d,'[data-source="PN-01"]');assert.match(d.querySelector('#sourceDetail').textContent,/ORIGINAL SYNTHETIC EVIDENCE/);assert.match(d.querySelector('#sourceDetail').textContent,/Source ID: PN-01/);assert.deepEqual(errors,[]);w.close();});
@@ -24,4 +24,19 @@ test('finance hold is not a forecast resolution',async()=>{
   assert.match(d.querySelector('#journeyContent').textContent,/Forecast placed on hold/);
   assert.match(d.querySelector('#journeyContent').textContent,/Neither A\$13\.7m nor A\$14\.2m becomes the approved/);
   assert.deepEqual(errors,[]);w.close();
+});
+
+test('meaning relationships distinguish scope from true conflict with traceable sources',async()=>{
+ const {w,d,errors}=await boot();
+ click(d,'[data-step="2"]');
+ assert.match(d.querySelector('.journey-relations').textContent,/Distinct definitions/);
+ assert.match(d.querySelector('.journey-relations').textContent,/D-001/);
+ assert.match(d.querySelector('.journey-relations').textContent,/D-002/);
+ const s=d.querySelector('#scenario');s.value='finance';s.dispatchEvent(new w.Event('change',{bubbles:true}));
+ click(d,'[data-step="2"]');
+ assert.match(d.querySelector('.journey-relations').textContent,/Unresolved same-scope disagreement/);
+ assert.match(d.querySelector('.journey-relations').textContent,/D-004/);
+ click(d,'[data-step="4"]');
+ assert.match(d.querySelector('.journey-decision-gate').textContent,/D-004/);
+ assert.deepEqual(errors,[]);w.close();
 });
