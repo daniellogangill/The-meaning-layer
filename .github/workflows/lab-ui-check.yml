@@ -1,7 +1,7 @@
 name: Test interactive lab UI
 on:
   push:
-    branches: [main, feature/five-dollar-budget-and-ai-workbench]
+    branches: [main, feature/five-dollar-budget-and-ai-workbench, feature/prototype4-guided-executive-journey]
     paths:
       - 'index.html'
       - 'journey.html'
