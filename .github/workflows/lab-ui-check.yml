@@ -11,6 +11,8 @@ on:
       - 'tests/test_decision_policy.cjs'
       - 'tests/test_evidence_smoke.cjs'
       - 'lab/decision-policy.js'
+      - 'lab/meaning-relations.js'
+      - 'tests/test_meaning_relations.cjs'
       - 'lab/app.js'
       - 'lab/ai.html'
       - 'lab/ai.js'
@@ -30,6 +32,8 @@ on:
       - 'tests/test_decision_policy.cjs'
       - 'tests/test_evidence_smoke.cjs'
       - 'lab/decision-policy.js'
+      - 'lab/meaning-relations.js'
+      - 'tests/test_meaning_relations.cjs'
       - 'lab/app.js'
       - 'lab/ai.html'
       - 'lab/ai.js'
@@ -55,7 +59,8 @@ jobs:
           node --check lab/ai.js
           node --check lab/journey.js
           node --check lab/decision-policy.js
+          node --check lab/meaning-relations.js
       - name: Install DOM test dependency
         run: npm install --no-save --no-audit --no-fund jsdom@26
       - name: Test browser interactions against actual generated corpus
-        run: node --test tests/test_lab_frontend.cjs tests/test_ai_workbench.cjs tests/test_guided_journey.cjs tests/test_decision_policy.cjs tests/test_evidence_smoke.cjs
+        run: node --test tests/test_lab_frontend.cjs tests/test_ai_workbench.cjs tests/test_guided_journey.cjs tests/test_decision_policy.cjs tests/test_evidence_smoke.cjs tests/test_meaning_relations.cjs
