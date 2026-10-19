@@ -33,7 +33,7 @@ const click = (d,sel) => {
 
 test('loads reproducible snapshot and moves through all seven workbenches', async () => {
   const {window,d,errors} = await launch();
-  assert.match(d.querySelector('#datasetStatus').textContent,/139 source records/);
+  assert.match(d.querySelector('#datasetStatus').textContent,new RegExp(dataset.stats.records+' source records'));
   assert.ok(d.querySelector('h1').textContent.includes('enterprise mess'));
   for (const [view, headline] of [
     ['sources','Evidence, not just documents'],
