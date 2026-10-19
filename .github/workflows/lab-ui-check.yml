@@ -5,6 +5,9 @@ on:
     paths:
       - 'index.html'
       - 'lab/app.js'
+      - 'lab/graph.js'
+      - 'src/meaning_lab.py'
+      - 'tests/test_meaning_lab.py'
       - 'lab/ai.html'
       - 'lab/ai.js'
       - 'lab/style.css'
@@ -17,6 +20,9 @@ on:
     paths:
       - 'index.html'
       - 'lab/app.js'
+      - 'lab/graph.js'
+      - 'src/meaning_lab.py'
+      - 'tests/test_meaning_lab.py'
       - 'lab/ai.html'
       - 'lab/ai.js'
       - 'lab/style.css'
@@ -35,8 +41,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Test synthetic evidence generator
+        run: python -m unittest discover -s tests -p test_meaning_lab.py -v
       - name: Check app JavaScript syntax
         run: |
+          node --check lab/graph.js
           node --check lab/app.js
           node --check lab/ai.js
       - name: Install DOM test dependency

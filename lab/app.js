@@ -12,7 +12,7 @@
   let data = null;
   const state = { view:'executive', question:'production', answer:'governed', doc:null,
     sourceSearch:'', sourceSite:'all', sourceFunction:'all', sourceSystem:'all', sourcePage:0,
-    term:null, graphSite:'Pilbara North', conflictFilter:'all', customQuery:'',
+    term:null, graphSite:'Pilbara North', graphLens:'production', graphSelection:null, conflictFilter:'all', customQuery:'',
     reviewFilter:'all', stage:4, selectedConflict:null };
   let decisions = {};
   try { decisions = JSON.parse(localStorage.getItem('meaning-lab-decisions-v2') || '{}'); }
@@ -262,47 +262,101 @@
       '<div class="notice amber">Definition wording comes from a curated seed dictionary; evidence links are automatically extracted. A term has not become governed simply because it appears here.</div></div>';
     return '<div class="section-head"><div><span class="eyebrow">SEMANTIC DISCOVERY</span><h1>One organisation. Many meanings.</h1><p>Review concept candidates, the business owner, aliases and source evidence. The dictionary is a starting hypothesis, not a final ontology.</p></div>'+badge(data.concepts.length+' concepts','green')+'</div>'+view+detail;
   }
-  function graphConcepts() {
-    const site=state.graphSite;
-    return data.concepts.map(c=>({...c,n:countTerm(c.id,site)})).filter(c=>c.n>0).sort((a,b)=>b.n-a.n).slice(0,17);
+  function graphModel(){
+    if(!window.MeaningGraph)throw new Error('Evidence graph module is missing.');
+    return window.MeaningGraph.build(data,{site:state.graphSite,lens:state.graphLens});
   }
-  function renderGraph() {
-    const selected=termById(state.term)||data.concepts[0];
-    const related=data.records.filter(r=>r.site===state.graphSite && r.extraction.concepts.some(x=>x.id===selected.id));
-    return '<div class="section-head"><div><span class="eyebrow">KNOWLEDGE GRAPH</span><h1>See the relationships.</h1><p>Interactive concept-to-site projection from extracted document mentions. Click a node to inspect its owner and supporting evidence.</p></div>'+
-      '<div><label class="input-label" for="graphSite">Focus operating site</label><select id="graphSite">'+
-      data.enterprise.sites.map(site=>'<option '+(site===state.graphSite?'selected':'')+'>'+esc(site)+'</option>').join('')+'</select></div></div>'+
-      '<div class="graph-layout"><div class="graph-canvas" id="graphCanvas"><svg id="graphSvg" viewBox="0 0 760 540" role="img" aria-label="Graph of business concepts linked to the selected site"></svg></div>'+
-      '<div class="panel"><span class="section-flag">SELECTED CONCEPT</span><h2 style="margin-top:16px">'+esc(selected.name)+'</h2>'+
-      badge(selected.owner+' owner','pink')+'<p>'+esc(selected.definition)+'</p>'+
-      '<h4>'+related.length+' evidence mentions at '+esc(state.graphSite)+'</h4>'+
-      '<div class="trace">'+related.slice(0,8).map(r=>docLink(r.id,r.id)).join('')+'</div>'+
-      '<div class="sep"></div><h4>Graph semantics</h4><p class="micro">Nodes represent candidate concepts; connection weight is the count of observed documents tagged by lexical extraction. This is not an automatically inferred causal graph.</p>'+
-      '<button class="btn small" data-view="terms">View the concept dictionary →</button></div></div>';
+  function renderGraph(){
+    const model=graphModel();
+    const selected=model.nodes.find(n=>n.id===state.graphSelection)||model.nodes.find(n=>n.kind==='decision');
+    const citations=[...new Set(model.edges.filter(e=>e.from===selected?.id||e.to===selected?.id)
+      .flatMap(e=>e.sourceIds||[]))].filter(id=>recordById(id));
+    const explanation={
+      document:'Observed synthetic source. Click its document node to inspect the full excerpt and provenance.',
+      term:'Candidate dictionary meaning linked to observed text; this is not an approved ontology or causal relationship.',
+      context:'Operational entity identified in source records, not an independently verified enterprise system.',
+      issue:'Curated comparison based on explicitly cited records; differences and conflicts must be distinguished.',
+      decision:'Curated executive recommendation. The decision has NOT been automatically inferred by a model.'
+    };
+    return '<div class="section-head"><div><span class="eyebrow">EVIDENCE NETWORK</span>'+
+      '<h1>See the relationships.</h1><p>Follow a business decision backwards through conflicting definitions, assets and source evidence. Choose a scenario; select any node to inspect its provenance.</p></div></div>'+
+      '<div class="graph-controls"><div><label class="input-label" for="graphLens">Executive question</label>'+
+      '<select id="graphLens">'+[['production','Production below plan'],['finance','Conflicting forecasts'],['safety','Safety permit decision']]
+        .map(x=>'<option value="'+x[0]+'" '+(x[0]===state.graphLens?'selected':'')+'>'+x[1]+'</option>').join('')+
+      '</select></div><div><label class="input-label" for="graphSite">Site context</label><select id="graphSite">'+
+      data.enterprise.sites.map(s=>'<option '+(s===state.graphSite?'selected':'')+'>'+esc(s)+'</option>').join('')+
+      '</select></div></div>'+
+      '<div class="graph-metrics">'+
+      [[''+model.sourceCount,'Visible source documents'],[''+model.eligibleCount,'Eligible source records'],[''+model.conceptCount,'Connected business meanings'],[''+model.comparisonCount,'Evidence comparisons']]
+        .map(x=>'<div><strong>'+x[0]+'</strong><span>'+x[1]+'</span></div>').join('')+'</div>'+
+      '<p class="micro">Drag horizontally on mobile to explore all four layers: source records → business meanings → operating context → decision questions. Connections describe observed mentions, common context or curated comparisons; they do not imply causation.</p>'+
+      '<div class="graph-layout"><div class="graph-canvas" id="graphCanvas" tabindex="0" aria-label="Horizontally scrollable evidence network">'+
+      '<svg id="graphSvg" viewBox="0 0 1120 800" role="group" aria-label="Four-layer evidence network: documents, concepts, context and decisions"></svg></div>'+
+      '<div class="panel graph-detail" aria-live="polite"><span class="section-flag">EXPLORE SELECTED NODE</span>'+
+      '<h2 style="margin-top:12px">'+esc(selected?.label||'Explore a connection')+'</h2>'+
+      badge(selected?.kind||'Network','pink')+
+      (selected?.subtitle?'<p class="micro">'+esc(selected.subtitle)+'</p>':'')+
+      (selected?.kind==='term'?'<p>'+esc(termById(selected.ref)?.definition||'')+'</p>':
+       selected?.description?'<p>'+esc(selected.description)+'</p>':'')+
+      '<p class="micro">'+esc(explanation[selected?.kind]||'Select a node to inspect connections.')+'</p>'+
+      '<h4>Supporting source IDs</h4><div class="trace">'+
+      (citations.length?citations.slice(0,14).map(id=>docLink(id)).join(''):'<p class="micro">No direct source IDs for this node.</p>')+
+      '</div><div class="sep"></div><p class="micro">Showing '+model.sourceCount+' representative source documents from '+model.eligibleCount+
+      ' eligible records for this site and question. Variants of the same source thread are de-duplicated; other records remain available in Source Explorer.</p>'+
+      '<button class="btn small" type="button" data-view="sources">Explore all source records →</button></div></div>';
   }
-  function drawGraph() {
+  function drawGraph(){
     const svg=$('#graphSvg');if(!svg)return;
-    const concepts=graphConcepts();
-    const cx=380,cy=260;
-    const circles='<circle cx="'+cx+'" cy="'+cy+'" r="205" fill="none" stroke="#344a56" stroke-dasharray="3 8"/>'+
-      '<circle cx="'+cx+'" cy="'+cy+'" r="126" fill="none" stroke="#2d4250" stroke-dasharray="2 9"/>';
-    const pos=concepts.map((c,i)=>{
-      const n=concepts.length;
-      const a=(i/n)*Math.PI*2-Math.PI/2;
-      const radius=i%3===0?209:183;
-      return {...c,x:cx+Math.cos(a)*radius,y:cy+Math.sin(a)*radius};
+    const model=graphModel();
+    const byId=new Map();
+    const buckets={
+      document:model.nodes.filter(n=>n.kind==='document'),
+      term:model.nodes.filter(n=>n.kind==='term'),
+      context:model.nodes.filter(n=>n.kind==='context'),
+      issue:model.nodes.filter(n=>n.kind==='issue'),
+      decision:model.nodes.filter(n=>n.kind==='decision')
+    };
+    const place=(arr,x,top,step)=>arr.forEach((n,i)=>byId.set(n.id,{...n,x,y:top+step*i}));
+    place(buckets.document,118,56,37);
+    place(buckets.term,415,72,buckets.term.length>9?64:74);
+    place(buckets.context,697,340,125);
+    place(buckets.issue,940,200,155);
+    place(buckets.decision,940,655,120);
+    const selected=state.graphSelection;
+    const connected=new Set([selected]);
+    model.edges.filter(e=>e.from===selected||e.to===selected).forEach(e=>{
+      connected.add(e.from);connected.add(e.to);
     });
-    const lines=pos.map(c=>'<line class="graph-edge '+(state.term===c.id?'highlight':'')+
-      '" x1="'+cx+'" y1="'+cy+'" x2="'+c.x.toFixed(1)+'" y2="'+c.y.toFixed(1)+
-      '" stroke-width="'+Math.min(4,.6+c.n*.14)+'"/>').join('');
-    const nodes=pos.map(c=>'<g class="graph-node" data-action="graph-term" data-id="'+esc(c.id)+'" role="button" tabindex="0" aria-label="'+esc(c.name)+'">'+
-      '<circle cx="'+c.x.toFixed(1)+'" cy="'+c.y.toFixed(1)+'" r="'+Math.min(29,16+c.n*.7)+'" fill="'+
-      (c.id===state.term?'#69304c':'#233a4a')+'" stroke="'+(c.id===state.term?'#ff9fc8':'#4b7181')+'" stroke-width="1.4"/>'+
-      '<text x="'+c.x.toFixed(1)+'" y="'+(c.y+3).toFixed(1)+'" text-anchor="middle" font-size="11">'+fmt(c.n)+'</text>'+
-      '<text x="'+c.x.toFixed(1)+'" y="'+(c.y+(c.y>cy?46:-35)).toFixed(1)+'" text-anchor="middle">'+esc(c.name.length>23?c.name.slice(0,21)+'…':c.name)+'</text></g>').join('');
-    svg.innerHTML=circles+lines+'<circle cx="'+cx+'" cy="'+cy+'" r="53" fill="#3e2743" stroke="#ff86bd" stroke-width="2"/>'+
-      '<text x="'+cx+'" y="'+(cy-3)+'" text-anchor="middle" fill="#fff" style="font:700 15px Space Grotesk">'+esc(state.graphSite)+'</text>'+
-      '<text x="'+cx+'" y="'+(cy+17)+'" text-anchor="middle" fill="#dcb8d3" style="font:11px DM Sans">Site context</text>'+nodes;
+    function path(e){
+      const a=byId.get(e.from),b=byId.get(e.to);if(!a||!b)return '';
+      const ax=a.x+(a.kind==='document'?82:a.kind==='term'?91:58);
+      const bx=b.x-(b.kind==='document'?82:b.kind==='term'?91:65);
+      const first=Math.min(ax,bx),second=Math.max(ax,bx);
+      const curve=Math.max(20,(second-first)/2);
+      const d='M'+ax+','+a.y+' C'+(ax+curve)+','+a.y+' '+(bx-curve)+','+b.y+' '+bx+','+b.y;
+      const emphasis=selected&&(e.from===selected||e.to===selected);
+      return '<path class="graph-link '+(emphasis?'highlight ':'')+
+        (e.kind.includes('comparison')||e.kind.includes('conflict')?'graph-risk ':'')+
+        '" d="'+d+'"><title>'+esc(e.kind)+' · '+esc((e.sourceIds||[]).join(', '))+'</title></path>';
+    }
+    function shape(n){
+      const v=byId.get(n.id),isSelected=selected===n.id,isDimmed=selected&&!connected.has(n.id);
+      const size=n.kind==='document'?{w:171,h:26}:n.kind==='term'?{w:184,h:40}:
+        n.kind==='context'?{w:126,h:49}:{w:188,h:60};
+      const cls='graph-object graph-'+n.kind+(isSelected?' selected':'')+(isDimmed?' muted':'');
+      const label=n.kind==='document'?n.label+' · '+n.subtitle:n.label;
+      const short=label.length>(n.kind==='document'?26:26)?label.slice(0,25)+'…':label;
+      const action=n.kind==='document'?'doc':'graph-select';
+      return '<g class="'+cls+'" data-action="'+action+'" data-id="'+esc(n.kind==='document'?n.ref:n.id)+
+        '" role="button" tabindex="0" aria-label="'+esc(n.kind+': '+n.label)+'">'+
+        '<rect x="'+(v.x-size.w/2)+'" y="'+(v.y-size.h/2)+'" width="'+size.w+'" height="'+size.h+'" rx="9"/>'+
+        '<text x="'+v.x+'" y="'+(v.y+(n.subtitle&&n.kind!=='document'? -4:4))+'" text-anchor="middle">'+esc(short)+'</text>'+
+        (n.kind!=='document'&&n.subtitle?'<text class="node-subtitle" x="'+v.x+'" y="'+(v.y+13)+'" text-anchor="middle">'+esc(n.subtitle.slice(0,28))+'</text>':'')+
+        '<title>'+esc(n.label+(n.subtitle?' · '+n.subtitle:''))+'</title></g>';
+    }
+    const headings=[['OBSERVED SOURCES',118],['BUSINESS MEANINGS',415],['OPERATIONAL CONTEXT',697],['DECISION RELIABILITY',940]]
+      .map(x=>'<text class="graph-column-head" x="'+x[1]+'" y="26" text-anchor="middle">'+x[0]+'</text>').join('');
+    svg.innerHTML=headings+model.edges.map(path).join('')+model.nodes.map(shape).join('');
   }
   function renderConflicts() {
     const cases=data.comparisons.filter(c=>state.conflictFilter==='all'||c.kind===state.conflictFilter);
@@ -447,7 +501,8 @@
     if(action==='stage-next'){state.stage=0;go('executive');$('#questionPanel')?.scrollIntoView({behavior:'smooth',block:'start'});return;}
     if(action==='custom-search'){state.customQuery=$('#customQuery')?.value||'';$('#customResults').innerHTML=renderCustomResults();return;}
     if(action==='page'){state.sourcePage=Math.max(0,state.sourcePage+Number(btn.dataset.dir));render();return;}
-    if(action==='term'||action==='graph-term'){state.term=btn.dataset.id;render();return;}
+    if(action==='term'||action==='graph-term'){state.term=btn.dataset.id;state.graphSelection='term:'+btn.dataset.id;render();return;}
+    if(action==='graph-select'){state.graphSelection=btn.dataset.id;render();return;}
     if(action==='open-term'){state.term=btn.dataset.id;go('terms');return;}
     if(action==='conflict-filter'){state.conflictFilter=btn.dataset.value;render();return;}
     if(action==='compare'){state.selectedConflict=btn.dataset.id;render();return;}
@@ -471,8 +526,8 @@
     if(ev.key==='Enter' && ev.target.id==='customQuery'){
       state.customQuery=ev.target.value;const box=$('#customResults');if(box)box.innerHTML=renderCustomResults();
     }
-    const node=ev.target.closest('.graph-node');
-    if(node && (ev.key==='Enter'||ev.key===' ')){ev.preventDefault();state.term=node.dataset.id;render();}
+    const node=ev.target.closest('.graph-object');
+    if(node && (ev.key==='Enter'||ev.key===' ')){ev.preventDefault();handleAction(node);}
   });
   document.addEventListener('change',ev=>{
     const el=ev.target;
@@ -480,7 +535,8 @@
     if(el.id==='sourceSite'){state.sourceSite=el.value;state.sourcePage=0;render();}
     if(el.id==='sourceFunction'){state.sourceFunction=el.value;state.sourcePage=0;render();}
     if(el.id==='sourceSystem'){state.sourceSystem=el.value;state.sourcePage=0;render();}
-    if(el.id==='graphSite'){state.graphSite=el.value;render();}
+    if(el.id==='graphSite'){state.graphSite=el.value;state.graphSelection=null;render();}
+    if(el.id==='graphLens'){state.graphLens=el.value;state.graphSelection=null;render();}
     if(el.id==='reviewFilter'){state.reviewFilter=el.value;render();}
   });
   document.addEventListener('input',ev=>{

@@ -56,6 +56,23 @@ class MeaningLabTests(unittest.TestCase):
         self.assertGreater(data["stats"]["source_types"], 5)
         self.assertEqual(data["evaluation"]["gold_labeled"], len(CLAIMS) * 3)
 
+    def test_cross_functional_graph_evidence_is_distinct_and_grounded(self):
+        public = snapshot()
+        source_ids = {r["id"] for r in public["records"]}
+        additions = {f"PN-{i}" for i in range(24, 36)}
+        self.assertTrue(additions.issubset(source_ids))
+        self.assertEqual(len(public["records"]), 175)
+        self.assertGreaterEqual(public["stats"]["candidate_links"], 140)
+        for record in public["records"]:
+            if record["id"] in additions:
+                self.assertEqual(record["classification"], "internal")
+                self.assertGreaterEqual(len(record["extraction"]["concepts"]), 1)
+                self.assertGreaterEqual(len(record["text"]), 100)
+        self.assertEqual(len(set(r["thread"] for r in public["records"]
+                                 if r["id"] in additions)), 12)
+        self.assertNotIn("truth", public)
+        self.assertTrue(all("text" not in r for r in public["restricted_metadata"]))
+
     def test_json_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "lab" / "data.json"
