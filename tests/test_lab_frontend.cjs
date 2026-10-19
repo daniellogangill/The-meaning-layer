@@ -8,6 +8,7 @@ const { JSDOM } = require('jsdom');
 const projectRoot = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(projectRoot, 'index.html'), 'utf8');
 const script = fs.readFileSync(path.join(projectRoot, 'lab/app.js'), 'utf8');
+const graphScript = fs.readFileSync(path.join(projectRoot, 'lab/graph.js'), 'utf8');
 const dataset = JSON.parse(fs.readFileSync(path.join(projectRoot, 'lab/data.json'), 'utf8'));
 
 async function launch() {
@@ -19,6 +20,7 @@ async function launch() {
   window.scrollTo = () => {};
   window.HTMLElement.prototype.scrollIntoView = () => {};
   window.fetch = async () => ({ok:true,json:async()=>dataset});
+  window.eval(graphScript);
   window.eval(script);
   await new Promise(resolve => setTimeout(resolve, 15));
   return {window, d:window.document, errors};
@@ -72,9 +74,12 @@ test('searches real synthetic records, opens provenance, preserves redactions', 
 test('renders interactive knowledge graph and discrepancy comparisons', async () => {
   const {window,d,errors} = await launch();
   click(d,'nav [data-view="graph"]');
-  assert.ok(d.querySelectorAll('.graph-node').length>5);
-  click(d,'.graph-node');
-  assert.ok(d.querySelectorAll('.graph-node').length>5);
+  assert.ok(d.querySelectorAll('.graph-object').length>15);
+  assert.ok(d.querySelectorAll('.graph-document').length>=10);
+  assert.ok(d.querySelectorAll('.graph-issue').length>=1);
+  assert.ok(d.querySelectorAll('.graph-link').length>20);
+  click(d,'.graph-term');
+  assert.ok(d.querySelectorAll('.graph-object').length>15);
   click(d,'nav [data-view="conflicts"]');
   assert.match(d.querySelector('#content').textContent,/True conflicts/);
   click(d,'[data-action="compare"]');
@@ -102,5 +107,38 @@ test('steward decisions stay local and narrative citations respond to scenarios'
   assert.match(d.querySelector('#customResults').textContent,/distinct evidence threads retrieved/);
   assert.match(d.querySelector('#customResults').textContent,/Automatically flagged disagreement/);
   assert.deepEqual(errors, []);
+  window.close();
+});
+
+
+test('multilayer executive graph shows grounded source-to-meaning-to-decision paths',async()=>{
+  const {window,d,errors}=await launch();
+  const engine=require('../lab/graph.js');
+  for(const lens of ['production','finance','safety']){
+    const g=engine.build(dataset,{site:'Pilbara North',lens});
+    assert.ok(g.sourceCount>=8,'evidence breadth for '+lens);
+    assert.ok(g.conceptCount>=3,'semantic breadth for '+lens);
+    assert.ok(g.edges.some(e=>e.kind==='observed mention'));
+    assert.ok(g.edges.some(e=>e.kind==='decision context'));
+    assert.ok(g.nodes.some(n=>n.kind==='issue'));
+    assert.ok(g.nodes.some(n=>n.kind==='decision'));
+    const permitted=new Set(dataset.records.filter(r=>r.classification==='internal').map(r=>r.id));
+    for(const e of g.edges)for(const id of e.sourceIds||[])
+      assert.ok(permitted.has(id),'link citation must resolve: '+id);
+    assert.equal(g.nodes.filter(n=>n.kind==='document').length,new Set(g.nodes.filter(n=>n.kind==='document').map(n=>dataset.records.find(r=>r.id===n.ref).thread)).size);
+  }
+  click(d,'nav [data-view="graph"]');
+  assert.match(d.querySelector('#content').textContent,/source records → business meanings/);
+  assert.equal(d.querySelectorAll('.graph-document').length>0,true);
+  click(d,'.graph-document');
+  assert.ok(d.querySelector('#docDialog').hasAttribute('open'));
+  click(d,'[data-action="close-dialog"]');
+  click(d,'.graph-issue');
+  assert.match(d.querySelector('.graph-detail').textContent,/Supporting source IDs/);
+  const select=d.querySelector('#graphLens');
+  select.value='safety';select.dispatchEvent(new window.Event('change',{bubbles:true}));
+  assert.ok(d.querySelectorAll('.graph-issue').length>0);
+  assert.match(d.querySelector('.graph-detail').textContent,/permit|Curated|source/i);
+  assert.deepEqual(errors,[]);
   window.close();
 });
