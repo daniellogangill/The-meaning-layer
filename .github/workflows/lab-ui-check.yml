@@ -5,6 +5,7 @@ on:
     paths:
       - 'index.html'
       - 'lab/app.js'
+      - 'lab/graph.js'
       - 'lab/ai.html'
       - 'lab/ai.js'
       - 'lab/style.css'
@@ -17,6 +18,7 @@ on:
     paths:
       - 'index.html'
       - 'lab/app.js'
+      - 'lab/graph.js'
       - 'lab/ai.html'
       - 'lab/ai.js'
       - 'lab/style.css'
@@ -37,6 +39,7 @@ jobs:
           node-version: '22'
       - name: Check app JavaScript syntax
         run: |
+          node --check lab/graph.js
           node --check lab/app.js
           node --check lab/ai.js
       - name: Install DOM test dependency
